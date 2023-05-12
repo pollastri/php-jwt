@@ -178,6 +178,12 @@ class CachedKeySet implements ArrayAccess
             }
             $request = $this->httpFactory->createRequest('GET', $this->jwksUri);
             $jwksResponse = $this->httpClient->sendRequest($request);
+            if ($jwksResponse->getStatusCode() !== 200) {
+                throw new UnexpectedValueException(
+                    (string) $jwksResponse->getBody(),
+                    $jwksResponse->getStatusCode()
+                );
+            }
             $this->keySet = $this->formatJwksForCache((string) $jwksResponse->getBody());
 
             if (!isset($this->keySet[$keyId])) {
