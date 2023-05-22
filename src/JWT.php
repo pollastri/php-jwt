@@ -79,7 +79,7 @@ class JWT
      *                                                                      'HS256', 'HS384', 'HS512', 'RS256', 'RS384'
      *                                                                      and 'RS512'.
      *
-     * @return stdClass The JWT's payload as a PHP object
+     * @return stdClass The JWT's header and payload as PHP objects
      *
      * @throws InvalidArgumentException     Provided key/key-array was empty or malformed
      * @throws DomainException              Provided JWT is malformed
@@ -92,7 +92,7 @@ class JWT
      * @uses jsonDecode
      * @uses urlsafeB64Decode
      */
-    public static function decode(
+    public static function decodeHeaderAndPayload(
         string $jwt,
         $keyOrKeyArray
     ): stdClass {
@@ -167,7 +167,47 @@ class JWT
             throw new ExpiredException('Expired token');
         }
 
-        return $payload;
+        $decodedJwt = new stdClass();
+        $decodedJwt->header = $header;
+        $decodedJwt->payload = $payload;
+
+        return $decodedJwt;
+    }
+
+    /**
+     * Decodes the payload from a JWT string into a PHP object.
+     *
+     * @param string                 $jwt            The JWT
+     * @param Key|ArrayAccess<string,Key>|array<string,Key> $keyOrKeyArray  The Key or associative array of key IDs
+     *                                                                      (kid) to Key objects.
+     *                                                                      If the algorithm used is asymmetric, this is
+     *                                                                      the public key.
+     *                                                                      Each Key object contains an algorithm and
+     *                                                                      matching key.
+     *                                                                      Supported algorithms are 'ES384','ES256',
+     *                                                                      'HS256', 'HS384', 'HS512', 'RS256', 'RS384'
+     *                                                                      and 'RS512'.
+     *
+     * @return stdClass The JWT's payload as a PHP object
+     *
+     * @throws InvalidArgumentException     Provided key/key-array was empty or malformed
+     * @throws DomainException              Provided JWT is malformed
+     * @throws UnexpectedValueException     Provided JWT was invalid
+     * @throws SignatureInvalidException    Provided JWT was invalid because the signature verification failed
+     * @throws BeforeValidException         Provided JWT is trying to be used before it's eligible as defined by 'nbf'
+     * @throws BeforeValidException         Provided JWT is trying to be used before it's been created as defined by 'iat'
+     * @throws ExpiredException             Provided JWT has since expired, as defined by the 'exp' claim
+     *
+     * @uses jsonDecode
+     * @uses urlsafeB64Decode
+     */
+    public static function decode(
+        string $jwt,
+        $keyOrKeyArray
+    ): stdClass {
+        $decodedJwt = self::decodeHeaderAndPayload($jwt, $keyOrKeyArray);
+
+        return $decodedJwt->payload;
     }
 
     /**
